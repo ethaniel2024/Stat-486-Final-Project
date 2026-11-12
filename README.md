@@ -94,30 +94,117 @@ python analysis/baseline.py
 4. Implement regularized regression and random forest models.
 5. Compare their performance against the persistence baseline using the same chronological evaluation period.
 
+## November 12, 2026 — Working Investigation Checkpoint
+
+### What is running now
+
+We completed the data cleaning pipeline and ran two ML models against the persistence baseline on the same 2026 test period.
+
+**Cleaning pipeline** (`analysis/clean.py`) — parses all concatenated fields in the raw processed CSV:
+
+- Splits `Avg TicketTop Ticket` into `Avg Ticket` and `Top Ticket` by extracting the first and second dollar amounts from concatenated strings (e.g., `$129.33$249.00`)
+- Splits `Seats SoldSeats in Theatre` into `Seats Sold` and `Seats In Theatre` using a regex boundary on the concatenated digit string
+- Strips currency symbols and casts all numeric fields
+- Drops the 24 rows with missing `Show` or `Theater` identifiers
+- Outputs `data/processed/Broadway_Data_Clean.csv`
+
+To reproduce:
+
+```bash
+python analysis/clean.py
+```
+
+**ML model pipeline** (`analysis/models.py`) — builds lagged features and trains Ridge regression and Random Forest on the cleaned dataset:
+
+```bash
+python analysis/models.py
+```
+
+### Cleaned dataset quality checks
+
+| Measure | Result |
+|---|---:|
+| Rows | 7,347 |
+| Distinct shows | 207 |
+| Reporting weeks | 253 |
+| Date range | January 2, 2022 – November 1, 2026 |
+| Missing values (any column) | 226 (Top Ticket only — not used as a predictor) |
+| Duplicate show-week observations | 0 |
+
+The cleaned dataset resolved 7,121 previously unparseable `Avg Ticket` values by extracting the first dollar amount from the concatenated string. All other columns are fully populated after dropping 24 missing-identifier rows.
+
+### Features used
+
+| Feature | Description |
+|---|---|
+| `Lag1_Gross` | Show's gross from exactly one week prior |
+| `Lag2_Gross` | Show's gross from two weeks prior |
+| `Lag1_Avg_Ticket` | Average ticket price from one week prior |
+| `Lag1_Pct_Cap` | Percent capacity sold from one week prior |
+| `Lag1_Perfs` | Number of performances from one week prior |
+| `Tony_Flag` | Tony Award for Best Musical nomination (0/1) |
+| `Week_Of_Year` | ISO week number (seasonal signal) |
+
+Predictors use only information available before the target week. The same 2026 chronological holdout and evaluation metrics (MAE, RMSE) are used for all models.
+
+### Model comparison
+
+| Model | Test observations | Test period | MAE | RMSE |
+|---|---:|---|---:|---:|
+| Persistence baseline | 1,346 | Jan 4 – Nov 1, 2026 | $138,700.66 | $222,494.50 |
+| Ridge regression | 1,346 | Jan 4 – Nov 1, 2026 | $135,061.38 | $213,089.77 |
+| **Random Forest** | **1,346** | **Jan 4 – Nov 1, 2026** | **$134,421.03** | **$208,620.92** |
+
+Both models improve over the baseline. Random Forest achieves the best MAE, reducing average prediction error by approximately $4,280 (−3.1%) relative to persistence. Ridge regression reduces MAE by approximately $3,639 (−2.6%).
+
+Random Forest feature importances show that prior-week gross (`Lag1_Gross`, 41.9%) and two-weeks-prior gross (`Lag2_Gross`, 30.5%) together account for 72% of predictive weight. Average ticket price (`Lag1_Avg_Ticket`, 15.0%) is the next most informative predictor, followed by capacity utilization (`Lag1_Pct_Cap`, 7.1%) and week of year (3.2%). Tony nomination status and performance count contribute minimally.
+
+- [Cleaning pipeline](analysis/clean.py)
+- [Model pipeline](analysis/models.py)
+- [Model results and interpretation](results/model_results.md)
+- [Per-observation predictions](results/model_predictions.csv)
+- [Actual vs. predicted plot](results/actual_vs_predicted.png)
+
+### What the results suggest
+
+The modest improvement over persistence (−3.1% MAE) indicates that Broadway weekly gross is close to a random walk — recent revenue is the dominant predictor, and additional features add limited signal. The gap between MAE and RMSE across all models reflects high-variance weeks, likely driven by holiday periods, closing weeks, or award-show timing.
+
+### Next steps
+
+1. Investigate large individual prediction errors to understand when and why models fail.
+2. Explore whether the Seats In Theatre field can be used to compute a corrected capacity-utilization predictor.
+3. Consider show-age or run-week features (how many weeks a show has been running).
+4. Evaluate whether further hyperparameter tuning of Random Forest meaningfully changes results.
+
 ## Repository Organization
 
 ```text
 Stat-486-Final-Project/
 ├── README.md
 ├── project-plan.md
+├── pyproject.toml
 ├── acquisition/
 │   └── PlaybillScrape.ipynb
 ├── data/
 │   ├── raw/
 │   │   └── Uncleaned_Broadway_Data.csv
 │   └── processed/
-│       └── Broadway_Data.csv
+│       ├── Broadway_Data.csv
+│       └── Broadway_Data_Clean.csv
 ├── analysis/
-│   └── baseline.py
+│   ├── clean.py
+│   ├── models.py
+│   └── baseline.ipynb
 └── results/
     ├── baseline_results.md
-    └── baseline_predictions.csv
+    ├── baseline_predictions.csv
+    ├── model_results.md
+    ├── model_predictions.csv
+    └── actual_vs_predicted.png
 ```
 
 ## Sources and Acknowledgments
 
 - [Playbill weekly Broadway grosses](https://playbill.com/grosses) — source for weekly box-office data.
 - [pandas documentation](https://pandas.pydata.org/docs/) — data acquisition, cleaning, and analysis.
-- [scikit-learn documentation](https://scikit-learn.org/stable/) — planned reference for machine-learning models and evaluation.
-
-We will document additional sources, code contributions, and data-use considerations as the project develops.
+- [scikit-learn documentation](https://scikit-learn.org/stable/) — machine-learning models and evaluation.

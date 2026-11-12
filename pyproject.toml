@@ -1,0 +1,17 @@
+[project]
+name = "stat-486-final-project"
+version = "0.1.0"
+description = "Broadway box-office forecasting — STAT 486 Final Project"
+requires-python = ">=3.11"
+dependencies = [
+    "pandas>=2.2",
+    "numpy>=1.26",
+    "scikit-learn>=1.5",
+    "matplotlib>=3.9",
+    "jupyter>=1.1",
+    "ipykernel>=6.29",
+]
+
+[tool.setuptools]
+packages = []
+
