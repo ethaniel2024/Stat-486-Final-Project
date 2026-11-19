@@ -125,6 +125,32 @@ df = df.dropna(subset=["Show", "Theater", "Week Ending", "This Week Gross"])
 n_dropped = n_before - len(df)
 print(f"Dropped {n_dropped} rows with missing Show/Theater/Date/Gross")
 
+#-----------------------------------------------------------------------------
+# 8.5 checcking for long timeframes with missing values
+
+dates = pd.DatetimeIndex(df["Week Ending"].dropna().unique()).sort_values()
+expected_dates = pd.date_range(dates.min(), dates.max(), freq="7D")
+missing_dates = expected_dates.difference(dates)
+
+if len(missing_dates) == 0:
+    print("No missing reporting weeks.")
+else:
+    missing = pd.DataFrame({"Week missing": missing_dates})
+    missing["Gap group"] = (
+        missing["Week missing"].diff() != pd.Timedelta(days=7)
+    ).cumsum()
+
+    gaps = missing.groupby("Gap group")["Week missing"].agg(
+        first_missing_week="min",
+        last_missing_week="max",
+        weeks_missing="count"
+    )
+
+    print("Missing reporting-week gaps:")
+    print(gaps.to_string(index=False))
+
+
+
 # ---------------------------------------------------------------------------
 # 9. Dedup — keep first occurrence of any (Show, Week Ending) duplicate
 # ---------------------------------------------------------------------------

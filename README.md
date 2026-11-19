@@ -208,3 +208,34 @@ Stat-486-Final-Project/
 - [Playbill weekly Broadway grosses](https://playbill.com/grosses) — source for weekly box-office data.
 - [pandas documentation](https://pandas.pydata.org/docs/) — data acquisition, cleaning, and analysis.
 - [scikit-learn documentation](https://scikit-learn.org/stable/) — machine-learning models and evaluation.
+
+
+## November 19, 2026 — Data Quality and Error Investigation
+
+### Dataset quality
+
+The cleaned dataset contains 7,347 show-week observations, covering 207 shows and 253 reporting weeks from January 2, 2022, through November 1, 2026. Our timeline check found no missing overall reporting weeks, and the dataset has no duplicate show-week rows.
+
+The cleaning process removed 24 rows from the original 7,371 because required information was missing. There are also 226 missing values in `Top Ticket`; that column is not used by our current models. See the [cleaning pipeline](analysis/clean.py).
+
+### Model results and interpretation
+
+We compared all models on the same 1,346 test observations from January 4 through November 1, 2026.
+
+| Model | MAE | RMSE |
+|---|---:|---:|
+| Persistence baseline | $138,700.66 | $222,494.50 |
+| Ridge regression | $135,061.38 | $213,089.77 |
+| Random Forest | $134,419.15 | $208,541.73 |
+
+Random Forest reduced MAE by about $4,282, or 3.1%, compared with predicting each show’s gross from the previous week. This is a modest improvement: the data provides some additional predictive value, but recent gross remains the strongest signal. In the Random Forest model, gross from the previous one and two weeks accounts for about 72.5% of the reported feature importance.
+
+See the [model pipeline](analysis/models.py), [model results](results/model_results.md), [test predictions](results/model_predictions.csv), and [actual-versus-predicted plot](results/actual_vs_predicted.png).
+
+### Error investigation and next steps
+
+We examined the 20 largest Random Forest errors. Several shows appeared more than once, including *Harry Potter and the Cursed Child* (four times) and *The Lion King* (three times). Some reporting dates also appeared repeatedly. The repeated theater counts corresponded to repeated shows, so these patterns are leads for further investigation rather than evidence that a particular theater or date caused the errors.
+
+A within-show IQR check flagged 17 of the 20 largest prediction errors as unusually large compared with that show’s other test-period errors. It flagged two actual gross observations as unusual compared with the show’s gross history. These flags identify unusual values; they do not establish that the data is incorrect or explain why the model missed.
+
+Next, we will compare the largest errors with each show’s previous-week gross and check whether the predictions or actual grosses fall outside that show’s pre-2026 range. We will also investigate whether particular dates or show changes help explain the largest misses.

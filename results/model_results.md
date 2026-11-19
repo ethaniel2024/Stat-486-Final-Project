@@ -1,9 +1,9 @@
-# Model Results â€” Working Investigation
+# Model Results — Working Investigation
 
 ## Evaluation Setup
 
 - **Train period:** pre-2026 (all weeks before January 1, 2026)
-- **Test period:** January 2026 â€“ November 2026 (1,346 observations)
+- **Test period:** January 2026 – November 2026 (1,346 observations)
 - **Target:** Weekly gross revenue (`This Week Gross`)
 - **Primary metric:** Mean Absolute Error (MAE)
 - **Secondary metric:** Root Mean Squared Error (RMSE)
@@ -24,18 +24,18 @@
 
 | Model | MAE | RMSE | vs. Baseline MAE |
 |---|---:|---:|---:|
-| Persistence baseline | $138,700.66 | $222,494.50 | â€” |
+| Persistence baseline | $138,700.66 | $222,494.50 | — |
 | Ridge regression | $135,061.38 | $213,089.77 | -2.6% |
-| Random Forest | $134,421.03 | $208,620.92 | -3.1% |
+| Random Forest | $134,419.15 | $208,541.73 | -3.1% |
 
 ## Random Forest Feature Importances
 
 | Feature | Importance |
 |---|---:|
-| `Lag1_Gross` | 0.4187 |
-| `Lag2_Gross` | 0.3051 |
-| `Lag1_Avg_Ticket` | 0.1498 |
-| `Lag1_Pct_Cap` | 0.0712 |
+| `Lag1_Gross` | 0.4203 |
+| `Lag2_Gross` | 0.3046 |
+| `Lag1_Avg_Ticket` | 0.1485 |
+| `Lag1_Pct_Cap` | 0.0714 |
 | `Week_Of_Year` | 0.0323 |
 | `Lag1_Perfs` | 0.0132 |
 | `Tony_Flag` | 0.0097 |
@@ -47,7 +47,7 @@ Ridge regression improved on the baseline,
 and Random Forest improved on it.
 
 The gap between MAE and RMSE across all models reflects the presence of large
-prediction errors â€” likely driven by holiday weeks, closing-week spikes, or
+prediction errors — likely driven by holiday weeks, closing-week spikes, or
 shows with high revenue variance.
 
 ## Outputs
